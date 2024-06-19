@@ -7,6 +7,13 @@ import {
 } from "@remix-run/react";
 import "./tailwind.css";
 
+export const meta = () => {
+  return [
+    { title: "Pokédex" },
+    { name: "description", content: "Gotta Catch 'Em All!" },
+  ];
+};
+
 export default function App() {
   return <html lang="en">
     <head>
@@ -16,9 +23,6 @@ export default function App() {
       <Links />
     </head>
     <body>
-      <h1 className="text-3xl font-bold underline">
-        Hello world!
-      </h1>
       <Outlet />
       <ScrollRestoration />
       <Scripts />
