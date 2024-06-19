@@ -2,7 +2,7 @@
   "name": "pokedex-app",
   "private": true,
   "sideEffects": false,
-  "version": "0.0.2",
+  "version": "0.0.3",
   "type": "module",
   "scripts": {
     "build": "remix vite:build",
@@ -12,6 +12,7 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@radix-ui/react-dropdown-menu": "^2.0.6",
     "@radix-ui/react-slot": "^1.0.2",
     "@remix-run/node": "^2.9.2",
     "@remix-run/react": "^2.9.2",
