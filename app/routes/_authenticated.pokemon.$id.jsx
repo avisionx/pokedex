@@ -1,19 +1,12 @@
 import { json } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { Link, useLoaderData } from "@remix-run/react";
+import { ArrowLeftIcon, ChevronRight } from "lucide-react";
+import { Fragment, useState } from "react";
 import { Badge } from "~/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
-
-async function fetchPokemonDetails(id) {
-    const pokemonResponse = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
-    const speciesResponse = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`);
-    const pokemon = await pokemonResponse.json();
-    const species = await speciesResponse.json();
-
-    const evolutionChainResponse = await fetch(species.evolution_chain.url);
-    const evolutionChain = await evolutionChainResponse.json();
-
-    return { pokemon, species, evolutionChain };
-}
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList } from "~/components/ui/breadcrumb";
+import { Button } from "~/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import { fetchPokemonDetails, formatNumber, getEvolutionChain, getPokemonImage, getWeaknesses } from "~/lib/helpers";
 
 export async function loader({ params }) {
     const data = await fetchPokemonDetails(params.id);
@@ -23,194 +16,156 @@ export async function loader({ params }) {
     return json(data);
 }
 
-function getEvolutionChain(chain) {
-    const evolutions = [];
-    let current = chain;
-    while (current && current.species) {
-        evolutions.push(current.species.name);
-        current = current.evolves_to[0];
-    }
-    return evolutions;
+export const meta = ({ data }) => {
+    const pokemonName = data.pokemon.name.split('-').join(' ').replace(/\b\w/g, char => char.toUpperCase());
+    return [{ title: `${pokemonName} | Pokédex` }]
 }
 
-function getWeaknesses(types) {
-    const typeData = {
-        normal: ['fighting'],
-        fighting: ['flying', 'psychic', 'fairy'],
-        flying: ['rock', 'electric', 'ice'],
-        poison: ['ground', 'psychic'],
-        ground: ['water', 'grass', 'ice'],
-        rock: ['fighting', 'ground', 'steel', 'water', 'grass'],
-        bug: ['flying', 'rock', 'fire'],
-        ghost: ['ghost', 'dark'],
-        steel: ['fighting', 'ground', 'fire'],
-        fire: ['ground', 'rock', 'water'],
-        water: ['grass', 'electric'],
-        grass: ['flying', 'poison', 'bug', 'fire', 'ice'],
-        electric: ['ground'],
-        psychic: ['bug', 'ghost', 'dark'],
-        ice: ['fighting', 'rock', 'steel', 'fire'],
-        dragon: ['ice', 'dragon', 'fairy'],
-        dark: ['fighting', 'bug', 'fairy'],
-        fairy: ['poison', 'steel'],
-    };
-
-    const weaknesses = new Set();
-    types.forEach(type => {
-        typeData[type.type.name].forEach(weakness => weaknesses.add(weakness));
-    });
-
-    return Array.from(weaknesses);
-}
-
-export default function PokemonDetails() {
+export default function Pokemon() {
     const { pokemon, species, evolutionChain } = useLoaderData();
     const evolutions = getEvolutionChain(evolutionChain.chain);
     const weaknesses = getWeaknesses(pokemon.types);
 
+    const [pokemonImageType, setPokemonImageType] = useState('default')
+
+    const changePokemonImageType = (value) => {
+        setPokemonImageType(value);
+    }
+
+    const front_image = getPokemonImage(pokemon.sprites, pokemonImageType, 'front')
+    const back_image = getPokemonImage(pokemon.sprites, pokemonImageType, 'back')
+
     return (
-        <div className="flex justify-center items-center bg-gray-100 p-4">
-            <Card className="max-w-3xl w-full">
-                <CardHeader>
-                    <div className="flex items-center">
-                        <CardTitle className="text-3xl capitalize mr-4">{pokemon.name}</CardTitle>
-                        <Badge className="text-lg">#{pokemon.id}</Badge>
-                    </div>
-                    <CardDescription className="capitalize mt-2">
-                        {pokemon.types.map((type) => type.type.name).join(", ")}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex flex-col items-center">
-                        <div className="grid grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <h3 className="text-lg font-semibold">Default</h3>
-                                <img
-                                    src={pokemon.sprites.front_default}
-                                    alt={`${pokemon.name} default`}
-                                    className="w-24 h-24"
-                                />
-                                <img
-                                    src={pokemon.sprites.back_default}
-                                    alt={`${pokemon.name} back`}
-                                    className="w-24 h-24 mt-2"
-                                />
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-semibold">Shiny</h3>
-                                <img
-                                    src={pokemon.sprites.front_shiny}
-                                    alt={`${pokemon.name} shiny`}
-                                    className="w-24 h-24"
-                                />
-                                <img
-                                    src={pokemon.sprites.back_shiny}
-                                    alt={`${pokemon.name} shiny back`}
-                                    className="w-24 h-24 mt-2"
-                                />
-                            </div>
-                            {pokemon.sprites.front_female && (
-                                <div>
-                                    <h3 className="text-lg font-semibold">Female</h3>
-                                    <img
-                                        src={pokemon.sprites.front_female}
-                                        alt={`${pokemon.name} female`}
-                                        className="w-24 h-24"
-                                    />
-                                    {pokemon.sprites.back_female && (
-                                        <img
-                                            src={pokemon.sprites.back_female}
-                                            alt={`${pokemon.name} female back`}
-                                            className="w-24 h-24 mt-2"
-                                        />
-                                    )}
-                                </div>
-                            )}
-                            {pokemon.sprites.front_shiny_female && (
-                                <div>
-                                    <h3 className="text-lg font-semibold">Shiny Female</h3>
-                                    <img
-                                        src={pokemon.sprites.front_shiny_female}
-                                        alt={`${pokemon.name} shiny female`}
-                                        className="w-24 h-24"
-                                    />
-                                    {pokemon.sprites.back_shiny_female && (
-                                        <img
-                                            src={pokemon.sprites.back_shiny_female}
-                                            alt={`${pokemon.name} shiny female back`}
-                                            className="w-24 h-24 mt-2"
-                                        />
-                                    )}
-                                </div>
-                            )}
+        <div className="flex bg-white px-6 py-4">
+            <div className="mx-auto max-w-3xl w-full flex gap-3 flex-col">
+                <div className="flex items-center">
+                    <Button variant="ghost" size="icon">
+                        <Link to='/pokemons' replace>
+                            <ArrowLeftIcon />
+                        </Link>
+                    </Button>
+                    <h1 className="mx-auto capitalize scroll-m-20 text-2xl font-semibold tracking-tight">{pokemon.name.split('-').join(' ')}</h1>
+                    <div className="w-[40px]"></div>
+                </div>
+                <p className="font-mono text-center text-sm text-gray-500 mt-[-12px]">#{formatNumber(pokemon.id)}</p>
+                <div className="flex items-center justify-center gap-3">
+                    {pokemon.types.map((type) => <Badge variant="secondary" className="text-xs font-mono hover:bg-primary hover:text-white cursor-pointer" key={type.type.name}>{type.type.name}</Badge>)}
+                </div>
+                <div className="w-[50%] mx-auto my-2">
+                    <Select defaultValue='default' onValueChange={changePokemonImageType} value={pokemonImageType}>
+                        <SelectTrigger aria-label="select type">
+                            <SelectValue placeholder="Select Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="default">Default</SelectItem>
+                            {pokemon.sprites.front_shiny && <SelectItem value="shiny">Shiny</SelectItem>}
+                            {pokemon.sprites.front_female && <SelectItem value="female">Female</SelectItem>}
+                            {pokemon.sprites.front_shiny_female && <SelectItem value="shiny_female">Shiny Female</SelectItem>}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className={`grid grid-cols-${back_image ? 2 : 1} gap-12 mb-4 mt-1 mx-auto`}>
+                    <div className="flex items-center flex-col gap-2">
+                        <div className="bg-muted rounded-full p-2">
+                            <img
+                                src={front_image}
+                                alt=""
+                                className="size-48"
+                            />
                         </div>
-                        <div className="mt-4 w-full">
-                            <h2 className="text-xl font-semibold mb-2">Stats</h2>
-                            <ul className="mb-4">
-                                {pokemon.stats.map((stat) => (
-                                    <li key={stat.stat.name} className="flex justify-between">
-                                        <span className="capitalize">{stat.stat.name}</span>
-                                        <span>{stat.base_stat}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                            <h2 className="text-xl font-semibold mb-2">Details</h2>
-                            <ul className="mb-4">
-                                <li className="flex justify-between">
-                                    <span>Height</span>
-                                    <span>{pokemon.height / 10} m</span>
-                                </li>
-                                <li className="flex justify-between">
-                                    <span>Weight</span>
-                                    <span>{pokemon.weight / 10} kg</span>
-                                </li>
-                                <li className="flex justify-between">
-                                    <span>Category</span>
-                                    <span className="capitalize">{species.genera.find(gen => gen.language.name === 'en').genus}</span>
-                                </li>
-                                <li className="flex justify-between">
-                                    <span>Gender</span>
-                                    <span>{species.gender_rate === -1 ? "Genderless" : `Male: ${(8 - species.gender_rate) / 8 * 100}%, Female: ${species.gender_rate / 8 * 100}%`}</span>
-                                </li>
-                            </ul>
-                            <h2 className="text-xl font-semibold mb-2">Abilities</h2>
-                            <ul className="mb-4">
-                                {pokemon.abilities.map((ability) => (
-                                    <li key={ability.ability.name} className="capitalize">
-                                        {ability.ability.name} {ability.is_hidden && <Badge className="ml-2">Hidden</Badge>}
-                                    </li>
-                                ))}
-                            </ul>
-                            <h2 className="text-xl font-semibold mb-2">Weaknesses</h2>
-                            <ul className="mb-4">
-                                {weaknesses.map((weakness) => (
-                                    <li key={weakness} className="capitalize">
-                                        {weakness}
-                                    </li>
-                                ))}
-                            </ul>
-                            <h2 className="text-xl font-semibold mb-2">Evolutions</h2>
-                            <ul className="mb-4">
-                                {evolutions.map((evolution) => (
-                                    <li key={evolution} className="capitalize">
-                                        {evolution}
-                                    </li>
-                                ))}
-                            </ul>
-                            <h2 className="text-xl font-semibold mb-2">Moves</h2>
-                            <ul className="grid grid-cols-2 gap-2">
-                                {pokemon.moves.map((move) => (
-                                    <li key={move.move.name} className="capitalize">
-                                        {move.move.name}
-                                    </li>
-                                ))}
-                            </ul>
-                            <h2 className="text-xl font-semibold mb-2">Description</h2>
-                            <p>{species.flavor_text_entries.find(entry => entry.language.name === 'en').flavor_text}</p>
-                        </div>
+                        <p className="font-mono text-xs font-bold tracking-widest text-gray-500">FRONT</p>
                     </div>
-                </CardContent>
-            </Card>
+                    {back_image && <div className="flex items-center flex-col gap-2">
+                        <div className="bg-muted rounded-full p-2">
+                            <img
+                                src={back_image}
+                                alt=""
+                                className="size-48"
+                            />
+                        </div>
+                        <p className="font-mono text-xs font-bold tracking-widest text-gray-500">BACK</p>
+                    </div>}
+                </div>
+                <div>
+                    <p className="scroll-m-20 text-xl font-semibold tracking-tight">Details</p>
+                    <p className="text-muted-foreground mb-1">{species.flavor_text_entries.find(entry => entry.language.name === 'en').flavor_text}</p>
+                    <ul>
+                        <li className="flex justify-between">
+                            <span>Height</span>
+                            <span>{pokemon.height / 10} m</span>
+                        </li>
+                        <li className="flex justify-between">
+                            <span>Weight</span>
+                            <span>{pokemon.weight / 10} kg</span>
+                        </li>
+                        <li className="flex justify-between">
+                            <span>Category</span>
+                            <span className="capitalize">{species.genera.find(gen => gen.language.name === 'en').genus}</span>
+                        </li>
+                        <li className="flex justify-between">
+                            <span>Gender</span>
+                            <span>{species.gender_rate === -1 ? "Genderless" : `Male: ${(8 - species.gender_rate) / 8 * 100}%, Female: ${species.gender_rate / 8 * 100}%`}</span>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <p className="scroll-m-20 text-xl font-semibold tracking-tight">Stats</p>
+                    <ul>
+                        {pokemon.stats.map((stat) => (
+                            <li key={stat.stat.name} className="flex justify-between">
+                                <span className="capitalize">{stat.stat.name.split('-').join(' ')}</span>
+                                <span>{stat.base_stat}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+                <div>
+                    <p className="scroll-m-20 text-xl font-semibold tracking-tight">Abilities</p>
+                    <ul>
+                        {pokemon.abilities.map((ability) => (
+                            <li key={ability.ability.name} className="capitalize flex items-center">
+                                {ability.ability.name.split('-').join(' ')} {ability.is_hidden && <Badge variant='outline' className="ml-2 text-xs">Hidden</Badge>}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+                <div>
+                    <p className="scroll-m-20 text-xl font-semibold tracking-tight">Weaknesses</p>
+                    <ul>
+                        {weaknesses.map((weakness) => (
+                            <li key={weakness} className="mb-1">
+                                <Badge variant="secondary" className="text-xs font-mono hover:bg-primary hover:text-white cursor-pointer">{weakness}</Badge>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+                <div>
+                    <p className="scroll-m-20 text-xl font-semibold tracking-tight">Evolutions</p>
+                    <Breadcrumb className="mt-1">
+                        <BreadcrumbList>
+                            {evolutions.map(({ name, id }, i) => (
+                                <Fragment key={id}>
+                                    <BreadcrumbItem>
+                                        <Link to={`/pokemon/${id}`} className="text-[16px] text-black">
+                                            {name.split('-').join(' ').replace(/\b\w/g, char => char.toUpperCase())}
+                                        </Link>
+                                    </BreadcrumbItem>
+                                    {i + 1 !== evolutions.length && <ChevronRight className="text-black size-4" />}
+                                </Fragment>))}
+                        </BreadcrumbList>
+                    </Breadcrumb>
+                </div>
+                <div>
+                    <p className="scroll-m-20 text-xl font-semibold tracking-tight">Moves</p>
+                    <ul className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        {pokemon.moves.map((move) => (
+                            <li key={move.move.name} className="capitalize">
+                                {move.move.name.split('-').join(' ')}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </div>
         </div>
     );
 }

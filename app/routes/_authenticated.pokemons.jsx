@@ -21,7 +21,8 @@ export default function Pokemons() {
     return (
         <div className='px-6 py-4'>
             <div className='flex items-center justify-between mb-5'>
-                <p className="scroll-m-20 text-2xl font-semibold tracking-tight">
+                <p className="scroll-m-20 text-2xl font-semibold tracking-tight text-primary flex items-center">
+                    <img src="/favicon.ico" alt="" className='mr-1 size-8 mb-1' />
                     Pokédex
                 </p>
                 <DropdownMenu>
