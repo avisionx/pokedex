@@ -1,5 +1,6 @@
-import { useFetcher } from '@remix-run/react';
+import { json, useFetcher, useLoaderData } from '@remix-run/react';
 import { CircleUserRoundIcon, LogOut } from 'lucide-react';
+import PokemonList from '~/components/pokemon-list';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -7,13 +8,19 @@ import {
     DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu';
 
+export const loader = async () => {
+    const response = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=${20}&offset=${0}`);
+    const data = await response.json();
+    return json(data);
+};
 
 export default function Pokemons() {
+    const data = useLoaderData();
     const fetcher = useFetcher();
 
     return (
         <div className='px-6 py-4'>
-            <div className='flex items-center justify-between'>
+            <div className='flex items-center justify-between mb-5'>
                 <p className="scroll-m-20 text-2xl font-semibold tracking-tight">
                     Pokédex
                 </p>
@@ -33,6 +40,7 @@ export default function Pokemons() {
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
+            <PokemonList initialData={data} />
         </div>
     );
 }

@@ -2,7 +2,7 @@
   "name": "pokedex-app",
   "private": true,
   "sideEffects": false,
-  "version": "0.0.3",
+  "version": "0.0.4",
   "type": "module",
   "scripts": {
     "build": "remix vite:build",
@@ -22,6 +22,7 @@
     "cookie": "^0.6.0",
     "isbot": "^4.1.0",
     "lucide-react": "^0.395.0",
+    "randomcolor": "^0.6.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "tailwind-merge": "^2.3.0",
